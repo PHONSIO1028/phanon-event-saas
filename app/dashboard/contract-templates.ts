@@ -4,7 +4,7 @@ import { money } from './types';
 export type ContractData = {
   template: string;
   profile: Row | null;
-  client: Row | undefined;
+  client: Row | undefined | null;
   event: Row;
 };
 
