@@ -1,0 +1,1 @@
+import Link from 'next/link';export default function Return(){return <><header><h1>PH@NON EVENT</h1></header><main><section><h2>Retour du paiement</h2><p>Votre paiement est en cours de vérification. La formule sera activée uniquement après confirmation du prestataire de paiement.</p><Link href="/dashboard">Retour au tableau de bord</Link></section></main></>}

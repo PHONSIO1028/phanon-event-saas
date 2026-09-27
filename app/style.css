@@ -1,0 +1,28 @@
+*{box-sizing:border-box}body{font-family:Arial,sans-serif;background:#f5f7fb;color:#192538;margin:0}header{background:#121d30;color:white;padding:20px 5%}main{max-width:1000px;margin:32px auto;padding:0 16px}section{background:white;padding:24px;border-radius:14px;margin:16px 0;box-shadow:0 3px 18px #15223812}input,select,button{padding:11px;border:1px solid #dce2ea;border-radius:8px;margin:5px}button{background:#d6aa59;color:#17243a;font-weight:bold;cursor:pointer}a{color:#986d25}nav a{margin-right:15px;color:white}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}.error{color:#ad2020}.muted{color:#6c7b8d}label{display:block;margin-top:10px}table{width:100%;border-collapse:collapse}td,th{border-bottom:1px solid #eee;padding:10px;text-align:left}
+
+/* Écrans ajoutés : devis, contrats, livraison, planning, aperçu PDF */
+.quote-form{margin-bottom:20px}
+.quote-item-row{display:flex;gap:8px;align-items:center;margin:4px 0}
+.quote-item-row input{flex:1}
+.event-detail{background:#f7f9fc;border:1px solid #e4e9f1;border-radius:10px;padding:14px;margin:6px 0}
+.event-detail .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+.calendar-nav{display:flex;align-items:center;gap:14px;margin-bottom:10px}
+.calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.calendar-head{font-weight:bold;text-align:center;padding:4px;color:#6c7b8d}
+.calendar-cell{min-height:64px;border:1px solid #eef1f6;border-radius:6px;padding:4px;font-size:12px}
+.calendar-cell.has-event{background:#fff6e6;border-color:#e7c58a}
+.calendar-event{background:#d6aa59;color:#17243a;border-radius:4px;padding:1px 4px;margin-top:2px;font-size:11px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.print-overlay{position:fixed;inset:0;background:white;z-index:999;overflow:auto}
+.print-toolbar{display:flex;justify-content:space-between;align-items:center;background:#121d30;color:white;padding:14px 5%;position:sticky;top:0}
+.print-toolbar button{margin-left:8px}
+.print-area{max-width:800px;margin:24px auto;padding:0 20px 60px}
+.contract-text{white-space:pre-wrap;font-family:Arial,sans-serif;font-size:14px;line-height:1.6}
+
+@media print{
+  body>*:not(.print-overlay){display:none!important}
+  .no-print{display:none!important}
+  .print-overlay{position:static!important;inset:auto!important}
+  .print-toolbar{display:none!important}
+  .print-area{max-width:none;margin:0;padding:0}
+}
