@@ -190,7 +190,9 @@ export default function ClientDashboard({
             clients={clients}
             events={events}
             contracts={contracts}
+            quotes={quotes}
             profile={profile}
+            accountEmail={email}
             focusEventId={focusEventId}
             setMsg={setMsg}
           />
