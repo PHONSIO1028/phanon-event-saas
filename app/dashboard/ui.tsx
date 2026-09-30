@@ -168,7 +168,15 @@ export default function ClientDashboard({
         )}
 
         {tab === 'quotes' && (
-          <QuotesTab clients={clients} events={events} quotes={quotes} profile={profile} focusEventId={focusEventId} setMsg={setMsg} />
+          <QuotesTab
+            clients={clients}
+            events={events}
+            quotes={quotes}
+            profile={profile}
+            accountEmail={email}
+            focusEventId={focusEventId}
+            setMsg={setMsg}
+          />
         )}
 
         {tab === 'payments' && (
