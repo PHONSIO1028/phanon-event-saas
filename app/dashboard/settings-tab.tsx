@@ -18,6 +18,7 @@ export default function SettingsTab({ profile, setMsg }: { profile: Row | null; 
       business_name: String(form.get('business_name') || ''),
       full_name: String(form.get('full_name') || ''),
       phone: String(form.get('phone') || ''),
+      email: String(form.get('email') || ''),
       address: String(form.get('address') || ''),
       updated_at: new Date().toISOString(),
     });
@@ -35,6 +36,7 @@ export default function SettingsTab({ profile, setMsg }: { profile: Row | null; 
         <input name="business_name" placeholder="Nom de l'entreprise / studio" defaultValue={profile?.business_name || ''} />
         <input name="full_name" placeholder="Nom complet" defaultValue={profile?.full_name || ''} />
         <input name="phone" placeholder="Téléphone" defaultValue={profile?.phone || ''} />
+        <input name="email" type="email" placeholder="E-mail professionnel" defaultValue={profile?.email || ''} />
         <input name="address" placeholder="Adresse" defaultValue={profile?.address || ''} />
         <button>Enregistrer</button>
       </form>
