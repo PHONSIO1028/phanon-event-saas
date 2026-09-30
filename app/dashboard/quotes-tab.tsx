@@ -6,11 +6,36 @@ import type { QuoteItem, Row } from './types';
 import { quoteTotal, quoteStatusLabels, money } from './types';
 import PrintView from './print-view';
 
+// --- Réglages du devis (à ajuster selon vos conditions) ---
+const VALIDITY_DAYS = 30; // durée de validité du devis
+const DEPOSIT_PERCENT = 50; // acompte demandé à la signature
+
+// Date lisible : 2026-12-12 -> 12 décembre 2026
+function frDate(value?: string | null) {
+  if (!value) return '—';
+  const d = new Date(String(value).length <= 10 ? `${value}T00:00:00` : value);
+  if (Number.isNaN(d.getTime())) return String(value);
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' });
+}
+
+// Texte tout en majuscules -> Première Lettre Majuscule (sinon inchangé)
+function tidy(value?: string | null) {
+  if (!value) return '—';
+  const hasLetters = /[a-zA-ZÀ-ÿ]/.test(value);
+  if (hasLetters && value === value.toUpperCase()) {
+    return value
+      .toLowerCase()
+      .replace(/(^|[\s\-'’])([a-zà-ÿ])/g, (_m, sep, ch) => sep + ch.toUpperCase());
+  }
+  return value;
+}
+
 export default function QuotesTab({
   clients,
   events,
   quotes,
   profile,
+  accountEmail,
   focusEventId,
   setMsg,
 }: {
@@ -18,6 +43,7 @@ export default function QuotesTab({
   events: Row[];
   quotes: Row[];
   profile: Row | null;
+  accountEmail?: string;
   focusEventId: string | null;
   setMsg: (m: string) => void;
 }) {
@@ -60,9 +86,27 @@ export default function QuotesTab({
     return `${ev.name} — ${client?.name || ''}`;
   }
 
+  // Numéro automatique : DEV-2026-001, DEV-2026-002... (par année, selon la date de création)
+  function quoteNumber(q: Row) {
+    const year = new Date(q.created_at).getFullYear();
+    const sameYear = quotes
+      .filter((x) => new Date(x.created_at).getFullYear() === year)
+      .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+    const rank = sameYear.findIndex((x) => x.id === q.id) + 1;
+    return `DEV-${year}-${String(rank).padStart(3, '0')}`;
+  }
+
+  function validUntil(q: Row) {
+    const d = new Date(q.created_at);
+    d.setDate(d.getDate() + VALIDITY_DAYS);
+    return d.toISOString().slice(0, 10);
+  }
+
   const previewQuote = quotes.find((q) => q.id === previewId);
   const previewEvent = previewQuote ? events.find((e) => e.id === previewQuote.event_id) : null;
   const previewClient = previewEvent ? clients.find((c) => c.id === previewEvent.client_id) : null;
+  const previewTotal = previewQuote ? quoteTotal(previewQuote.items || []) : 0;
+  const deposit = Math.round((previewTotal * DEPOSIT_PERCENT) / 100);
 
   return (
     <section>
@@ -117,6 +161,7 @@ export default function QuotesTab({
         <tbody>
           {quotes.map((q) => (
             <tr key={q.id}>
+              <td>{quoteNumber(q)}</td>
               <td>{eventName(q.event_id)}</td>
               <td>{money(quoteTotal(q.items || []))}</td>
               <td>{quoteStatusLabels[q.status] || q.status}</td>
@@ -138,17 +183,29 @@ export default function QuotesTab({
       {previewQuote && previewEvent && (
         <PrintView title={`Devis — ${previewEvent.name}`} onClose={() => setPreviewId(null)}>
           <h1>{profile?.business_name || profile?.full_name || 'PH@NON EVENT'}</h1>
-          <p className="muted">{profile?.phone} {profile?.address}</p>
-          <h2>Devis</h2>
-          <p>
-            Client : {previewClient?.name || '—'}
-            <br />
-            Événement : {previewEvent.name}
-            <br />
-            Date : {previewEvent.date}
-            <br />
-            Lieu : {previewEvent.location || '—'}
+          <p className="muted">
+            {profile?.phone && <>Tél : {profile.phone}<br /></>}
+            {(profile?.email || accountEmail) && <>E-mail : {profile?.email || accountEmail}<br /></>}
+            {profile?.address && <>{profile.address}</>}
           </p>
+
+          <h2>
+            Devis n° {quoteNumber(previewQuote)}
+          </h2>
+          <p className="muted">
+            Émis le {frDate(previewQuote.created_at)} · Valable jusqu’au {frDate(validUntil(previewQuote))}
+          </p>
+
+          <p>
+            <strong>Client :</strong> {previewClient?.name || '—'}
+            <br />
+            <strong>Événement :</strong> {previewEvent.name}
+            <br />
+            <strong>Date :</strong> {frDate(previewEvent.date)}
+            <br />
+            <strong>Lieu :</strong> {tidy(previewEvent.location)}
+          </p>
+
           <table>
             <thead>
               <tr>
@@ -159,16 +216,38 @@ export default function QuotesTab({
             <tbody>
               {(previewQuote.items || []).map((it: QuoteItem, i: number) => (
                 <tr key={i}>
-                  <td>{it.label}</td>
+                  <td>{tidy(it.label)}</td>
                   <td>{money(it.amount)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
           <p>
-            <strong>Total : {money(quoteTotal(previewQuote.items || []))}</strong>
+            <strong>Total : {money(previewTotal)}</strong>
           </p>
-          <p className="muted">Devis généré via PH@NON EVENT.</p>
+
+          <h3>Conditions de paiement</h3>
+          <p>
+            Acompte de {DEPOSIT_PERCENT} % ({money(deposit)}) à la signature du devis.
+            <br />
+            Solde ({money(previewTotal - deposit)}) à régler avant la livraison des fichiers.
+          </p>
+
+          <h3>Bon pour accord</h3>
+          <div style={{ display: 'flex', gap: '48px', marginTop: '16px' }}>
+            <div style={{ flex: 1 }}>
+              <p>Le client (nom, date et signature)</p>
+              <div style={{ borderBottom: '1px solid #000', height: '70px' }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p>Le prestataire (date et signature)</p>
+              <div style={{ borderBottom: '1px solid #000', height: '70px' }} />
+            </div>
+          </div>
+
+          <p className="muted" style={{ marginTop: '24px' }}>
+            Devis généré via PH@NON EVENT — Organisez. Produisez. Encaissez. Livrez.
+          </p>
         </PrintView>
       )}
     </section>
