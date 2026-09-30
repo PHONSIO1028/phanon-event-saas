@@ -2,23 +2,27 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { browserDB } from '../../lib/supabase';
-import type { Row } from './types';
-import { contractStatusLabels, contractTemplateLabels } from './types';
-import { buildContractText } from './contract-templates';
+import type { QuoteItem, Row } from './types';
+import { contractStatusLabels, contractTemplateLabels, quoteTotal } from './types';
+import { buildContract } from './contract-templates';
 import PrintView from './print-view';
 
 export default function ContractsTab({
   clients,
   events,
   contracts,
+  quotes,
   profile,
+  accountEmail,
   focusEventId,
   setMsg,
 }: {
   clients: Row[];
   events: Row[];
   contracts: Row[];
+  quotes?: Row[];
   profile: Row | null;
+  accountEmail?: string;
   focusEventId: string | null;
   setMsg: (m: string) => void;
 }) {
@@ -53,13 +57,39 @@ export default function ContractsTab({
     return `${ev.name} — ${client?.name || ''}`;
   }
 
+  // Numéro automatique : CTR-2026-001, CTR-2026-002... (par année, selon la date de création)
+  function contractNumber(c: Row) {
+    const year = new Date(c.created_at).getFullYear();
+    const sameYear = contracts
+      .filter((x) => new Date(x.created_at).getFullYear() === year)
+      .sort((a, b) => String(a.created_at).localeCompare(String(b.created_at)));
+    const rank = sameYear.findIndex((x) => x.id === c.id) + 1;
+    return `CTR-${year}-${String(rank).padStart(3, '0')}`;
+  }
+
+  // Montant du contrat : devis accepté de l'événement, sinon dernier devis, sinon montant de l'événement
+  function contractAmount(evId: string, fallback: number) {
+    const list = (quotes || []).filter((q) => q.event_id === evId);
+    const chosen = list.find((q) => q.status === 'accepte') || list[0];
+    if (!chosen) return fallback;
+    return quoteTotal((chosen.items || []) as QuoteItem[]);
+  }
+
   const previewContract = contracts.find((c) => c.id === previewId);
   const previewEvent = previewContract ? events.find((e) => e.id === previewContract.event_id) : null;
   const previewClient = previewEvent ? clients.find((c) => c.id === previewEvent.client_id) : null;
-  const contractText =
+  const doc =
     previewContract && previewEvent
-      ? buildContractText({ template: previewContract.template, profile, client: previewClient, event: previewEvent })
-      : '';
+      ? buildContract({
+          template: previewContract.template,
+          profile,
+          client: previewClient,
+          event: previewEvent,
+          total: contractAmount(previewEvent.id, Number(previewEvent.amount || 0)),
+          email: accountEmail,
+          issuedAt: previewContract.created_at,
+        })
+      : null;
 
   return (
     <section>
@@ -96,6 +126,7 @@ export default function ContractsTab({
         <tbody>
           {contracts.map((c) => (
             <tr key={c.id}>
+              <td>{contractNumber(c)}</td>
               <td>{eventName(c.event_id)}</td>
               <td>{contractTemplateLabels[c.template] || c.template}</td>
               <td>{contractStatusLabels[c.status] || c.status}</td>
@@ -114,9 +145,53 @@ export default function ContractsTab({
         </tbody>
       </table>
 
-      {previewContract && previewEvent && (
+      {previewContract && previewEvent && doc && (
         <PrintView title={`Contrat — ${previewEvent.name}`} onClose={() => setPreviewId(null)}>
-          <pre className="contract-text">{contractText}</pre>
+          <h1>{doc.providerName}</h1>
+          <p className="muted">
+            {doc.phone && <>Tél : {doc.phone}<br /></>}
+            {doc.email && <>E-mail : {doc.email}<br /></>}
+            {doc.address && <>{doc.address}</>}
+          </p>
+
+          <h2>{doc.title}</h2>
+          <p className="muted">
+            Contrat n° {contractNumber(previewContract)} · Établi le {doc.issuedOn}
+          </p>
+
+          <p>
+            <strong>Entre :</strong> {doc.providerName}, ci-après « le prestataire »,
+            <br />
+            <strong>Et :</strong> {doc.clientName}, ci-après « le client ».
+          </p>
+          <p>Il est convenu ce qui suit :</p>
+
+          {doc.articles.map((a, i) => (
+            <div key={i}>
+              <h3>
+                Article {i + 1} — {a.title}
+              </h3>
+              <p style={{ whiteSpace: 'pre-line' }}>{a.text}</p>
+            </div>
+          ))}
+
+          <p style={{ marginTop: '20px' }}>Fait en deux exemplaires, à Abidjan, le {doc.issuedOn}.</p>
+
+          <h3>Lu et approuvé</h3>
+          <div style={{ display: 'flex', gap: '48px', marginTop: '16px' }}>
+            <div style={{ flex: 1 }}>
+              <p>Le prestataire (date et signature)</p>
+              <div style={{ borderBottom: '1px solid #000', height: '70px' }} />
+            </div>
+            <div style={{ flex: 1 }}>
+              <p>Le client (nom, date et signature)</p>
+              <div style={{ borderBottom: '1px solid #000', height: '70px' }} />
+            </div>
+          </div>
+
+          <p className="muted" style={{ marginTop: '24px' }}>
+            Contrat généré via PH@NON EVENT — Organisez. Produisez. Encaissez. Livrez.
+          </p>
         </PrintView>
       )}
     </section>
