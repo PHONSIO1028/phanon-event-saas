@@ -1,6 +1,9 @@
 import type { Row } from './types';
 import { money } from './types';
 
+// Délai de livraison (devis et contrat) : modifier ici pour changer partout
+export const DELIVERY_DELAY = '1 à 2 mois maximum après l’événement';
+
 // Échéancier de paiement (devis et contrat) : modifier ici pour changer partout
 export const PAYMENT_PLAN: { percent: number; when: string }[] = [
   { percent: 50, when: 'à la signature du contrat' },
@@ -102,11 +105,11 @@ export function buildContract(data: ContractData): ContractDoc {
     },
     {
       title: 'Annulation',
-      text: "En cas d'annulation par le client à moins de 15 jours de l'événement, l'acompte versé reste acquis au prestataire.",
+      text: "En cas d'annulation par le client à moins de 15 jours de l'événement, les sommes déjà versées restent acquises au prestataire.",
     },
     {
       title: 'Livrables',
-      text: 'Les livrables (photos, vidéos, albums) sont remis dans le délai indiqué sur le devis, contre le règlement du dernier versement.',
+      text: `Les livrables (photos, vidéos, albums) sont remis dans un délai de ${DELIVERY_DELAY}, contre le règlement du dernier versement.`,
     },
     {
       title: 'Droit d’utilisation',
