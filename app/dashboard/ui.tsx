@@ -208,7 +208,16 @@ export default function ClientDashboard({
         )}
 
         {tab === 'delivery' && (
-          <DeliveryTab clients={clients} events={events} deliveries={deliveries} focusEventId={focusEventId} setMsg={setMsg} />
+          <DeliveryTab
+            clients={clients}
+            events={events}
+            deliveries={deliveries}
+            quotes={quotes}
+            payments={payments}
+            profile={profile}
+            focusEventId={focusEventId}
+            setMsg={setMsg}
+          />
         )}
 
         {tab === 'settings' && <SettingsTab profile={profile} setMsg={setMsg} />}
