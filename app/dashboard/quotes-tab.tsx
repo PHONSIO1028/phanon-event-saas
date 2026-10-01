@@ -5,7 +5,7 @@ import { browserDB } from '../../lib/supabase';
 import type { QuoteItem, Row } from './types';
 import { quoteTotal, quoteStatusLabels, money } from './types';
 import PrintView from './print-view';
-import { paymentSchedule } from './contract-templates';
+import { paymentSchedule, DELIVERY_DELAY } from './contract-templates';
 
 // --- Réglages du devis ---
 const VALIDITY_DAYS = 30; // durée de validité du devis
@@ -235,6 +235,10 @@ export default function QuotesTab({
                 <br />
               </span>
             ))}
+          </p>
+
+          <p>
+            <strong>Délai de livraison :</strong> {DELIVERY_DELAY}.
           </p>
 
           <h3>Bon pour accord</h3>
