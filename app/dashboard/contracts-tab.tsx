@@ -83,7 +83,7 @@ export default function ContractsTab({
       ? buildContract({
           template: previewContract.template,
           profile,
-          client: previewClient,
+             client: previewClient ?? undefined,
           event: previewEvent,
           total: contractAmount(previewEvent.id, Number(previewEvent.amount || 0)),
           email: accountEmail,
