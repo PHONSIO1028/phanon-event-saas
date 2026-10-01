@@ -185,6 +185,8 @@ export default function ClientDashboard({
             events={events}
             quotes={quotes}
             payments={payments}
+            profile={profile}
+            accountEmail={email}
             focusEventId={focusEventId}
             setMsg={setMsg}
           />
