@@ -1,8 +1,22 @@
 import type { Row } from './types';
 import { money } from './types';
 
-// Même valeur que dans quotes-tab.tsx : à garder identique
-export const DEPOSIT_PERCENT = 50;
+// Échéancier de paiement (devis et contrat) : modifier ici pour changer partout
+export const PAYMENT_PLAN: { percent: number; when: string }[] = [
+  { percent: 50, when: 'à la signature du contrat' },
+  { percent: 25, when: 'le jour de la cérémonie' },
+  { percent: 25, when: 'à la livraison des fichiers' },
+];
+
+// Montants de chaque échéance (la dernière absorbe l'arrondi pour que la somme soit exacte)
+export function paymentSchedule(total: number): { percent: number; when: string; amount: number }[] {
+  let paid = 0;
+  return PAYMENT_PLAN.map((p, i) => {
+    const amount = i === PAYMENT_PLAN.length - 1 ? total - paid : Math.round((total * p.percent) / 100);
+    paid += amount;
+    return { ...p, amount };
+  });
+}
 
 // Date lisible : 2026-12-12 -> 12 décembre 2026
 export function frDate(value?: string | null): string {
@@ -47,8 +61,6 @@ export type ContractDoc = {
   eventDate: string;
   location: string;
   total: number;
-  deposit: number;
-  balance: number;
   issuedOn: string;
   articles: ContractArticle[];
 };
@@ -62,8 +74,6 @@ const titleByTemplate: Record<string, string> = {
 export function buildContract(data: ContractData): ContractDoc {
   const { profile, client, event } = data;
   const total = Number(data.total ?? event.amount ?? 0);
-  const deposit = Math.round((total * DEPOSIT_PERCENT) / 100);
-  const balance = total - deposit;
   const eventDate = frDate(event.date);
   const location = tidy(event.location);
   const clientName = client?.name || 'Client';
@@ -80,9 +90,11 @@ export function buildContract(data: ContractData): ContractDoc {
     {
       title: 'Prix et paiement',
       text:
-        `Le montant total de la prestation est de ${money(total)}.\n` +
-        `Un acompte de ${DEPOSIT_PERCENT} % (${money(deposit)}) est versé à la signature du contrat et confirme la réservation de la date.\n` +
-        `Le solde (${money(balance)}) est réglé avant la livraison des fichiers, sauf accord écrit contraire.`,
+        `Le montant total de la prestation est de ${money(total)}, payable en trois versements :\n` +
+        paymentSchedule(total)
+          .map((p) => `• ${p.percent} % (${money(p.amount)}) ${p.when}`)
+          .join('\n') +
+        `\nLe premier versement confirme la réservation de la date.`,
     },
     {
       title: 'Engagements du prestataire',
@@ -94,7 +106,7 @@ export function buildContract(data: ContractData): ContractDoc {
     },
     {
       title: 'Livrables',
-      text: 'Les livrables (photos, vidéos, albums) sont remis dans le délai indiqué sur le devis, après validation du solde.',
+      text: 'Les livrables (photos, vidéos, albums) sont remis dans le délai indiqué sur le devis, contre le règlement du dernier versement.',
     },
     {
       title: 'Droit d’utilisation',
@@ -113,8 +125,6 @@ export function buildContract(data: ContractData): ContractDoc {
     eventDate,
     location,
     total,
-    deposit,
-    balance,
     issuedOn: frDate(data.issuedAt || new Date().toISOString()),
     articles,
   };
