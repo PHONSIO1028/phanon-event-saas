@@ -5,10 +5,11 @@ import { browserDB } from '../../lib/supabase';
 import type { QuoteItem, Row } from './types';
 import { quoteTotal, quoteStatusLabels, money } from './types';
 import PrintView from './print-view';
+import { paymentSchedule } from './contract-templates';
 
-// --- Réglages du devis (à ajuster selon vos conditions) ---
+// --- Réglages du devis ---
 const VALIDITY_DAYS = 30; // durée de validité du devis
-const DEPOSIT_PERCENT = 50; // acompte demandé à la signature
+// L'échéancier de paiement se modifie dans contract-templates.ts (PAYMENT_PLAN)
 
 // Date lisible : 2026-12-12 -> 12 décembre 2026
 function frDate(value?: string | null) {
@@ -106,7 +107,7 @@ export default function QuotesTab({
   const previewEvent = previewQuote ? events.find((e) => e.id === previewQuote.event_id) : null;
   const previewClient = previewEvent ? clients.find((c) => c.id === previewEvent.client_id) : null;
   const previewTotal = previewQuote ? quoteTotal(previewQuote.items || []) : 0;
-  const deposit = Math.round((previewTotal * DEPOSIT_PERCENT) / 100);
+  const schedule = paymentSchedule(previewTotal);
 
   return (
     <section>
@@ -228,9 +229,12 @@ export default function QuotesTab({
 
           <h3>Conditions de paiement</h3>
           <p>
-            Acompte de {DEPOSIT_PERCENT} % ({money(deposit)}) à la signature du devis.
-            <br />
-            Solde ({money(previewTotal - deposit)}) à régler avant la livraison des fichiers.
+            {schedule.map((p, i) => (
+              <span key={i}>
+                {p.percent} % ({money(p.amount)}) {p.when}
+                <br />
+              </span>
+            ))}
           </p>
 
           <h3>Bon pour accord</h3>
