@@ -180,7 +180,14 @@ export default function ClientDashboard({
         )}
 
         {tab === 'payments' && (
-          <PaymentsTab events={events} payments={payments} focusEventId={focusEventId} setMsg={setMsg} />
+          <PaymentsTab
+            clients={clients}
+            events={events}
+            quotes={quotes}
+            payments={payments}
+            focusEventId={focusEventId}
+            setMsg={setMsg}
+          />
         )}
 
         {tab === 'planning' && <PlanningTab clients={clients} events={events} />}
