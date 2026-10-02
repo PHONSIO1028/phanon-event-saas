@@ -10,11 +10,32 @@ import { DELIVERY_DELAY, frDate } from './contract-templates';
 const DELIVERY_MAX_MONTHS = 2;
 
 // Lien valide : http(s) uniquement. Sans préfixe, on ajoute https://
+// Si du texte entoure le lien (ex. « Lien : https://... »), on garde seulement le lien.
+function parseLink(raw: string): { url: string | null; error: string } {
+  let value = String(raw || '').trim();
+  const found = value.match(/https?:\/\/\S+/i);
+  if (found) value = found[0];
+  if (!value) return { url: null, error: 'Saisissez le lien de livraison.' };
+  if (/\s/.test(value)) {
+    return { url: null, error: 'Le lien contient des espaces : copiez-collez le lien complet, sans texte autour.' };
+  }
+  if (!/^https?:\/\//i.test(value)) {
+    if (/^[a-z][a-z0-9+.-]*:(?!\d)/i.test(value)) {
+      return { url: null, error: 'Le lien doit commencer par https:// (exemple : https://drive.google.com/…).' };
+    }
+    value = `https://${value}`;
+  }
+  try {
+    const parsed = new URL(value);
+    if (!parsed.hostname.includes('.')) throw new Error('hôte invalide');
+  } catch {
+    return { url: null, error: 'Ce texte ne ressemble pas à un lien web (exemple : https://drive.google.com/…).' };
+  }
+  return { url: value, error: '' };
+}
+
 function normalizeLink(raw: string): string | null {
-  const value = String(raw || '').trim();
-  if (!value || /\s/.test(value)) return null;
-  if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return /^https?:\/\//i.test(value) ? value : null;
-  return `https://${value}`;
+  return parseLink(raw).url;
 }
 
 // Numéro WhatsApp : 10 chiffres (Côte d'Ivoire) -> ajout de l'indicatif 225
@@ -97,11 +118,12 @@ export default function DeliveryTab({
       setMsg('Choisissez un événement.');
       return;
     }
-    const url = normalizeLink(link);
-    if (!url) {
-      setMsg('Le lien est invalide : il doit commencer par http:// ou https://.');
+    const parsed = parseLink(link);
+    if (!parsed.url) {
+      setMsg(parsed.error);
       return;
     }
+    const url = parsed.url;
     const remaining = remainingFor(ev);
     if (
       remaining > 0 &&
