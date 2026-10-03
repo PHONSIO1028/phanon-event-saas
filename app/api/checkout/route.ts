@@ -32,7 +32,7 @@ export async function POST(req:Request){
     const lr=await fetch(api+'/v1/oauth/login',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({api_key:process.env.CINETPAY_API_KEY,api_password:process.env.CINETPAY_API_PASSWORD})});
     const lj=(await lr.json()) as LoginResp;
     const token=lj.access_token||lj.data?.access_token;
-    if(!lr.ok||!token)throw new Error('Authentification CinetPay refusee');
+   if(!lr.ok||!token){console.error('cinetpay login',lr.status,JSON.stringify(lj));throw new Error('Authentification CinetPay refusee')}
 
     const meta=(user.user_metadata||{}) as Record<string,unknown>;
     const full=String(meta.full_name||meta.name||'').trim();
