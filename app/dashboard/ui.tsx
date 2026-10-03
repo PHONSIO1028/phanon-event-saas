@@ -66,7 +66,7 @@ export default function ClientDashboard({
       body: JSON.stringify({ plan: next }),
     });
     const data = await r.json();
-    if (r.ok && data.url && new URL(data.url).hostname === 'checkout.cinetpay.com') location.href = data.url;
+    if (r.ok && data.url && new URL(data.url).hostname.endsWith('cinetpay.net')) location.href = data.url;
     else setMsg(data.error || 'Paiement indisponible');
   }
 
